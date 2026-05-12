@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { User, Mail, Lock, CheckCircle2, Loader2, AlertCircle, Wallet } from 'lucide-react';
+import { User, Mail, CheckCircle2, Loader2, AlertCircle, Wallet } from 'lucide-react';
 import { ethers } from 'ethers';
-import { UserProfile } from '../types';
 
 export default function AccountSettings() {
   const { user, profile, updateAccount } = useAuth();
@@ -26,8 +25,11 @@ export default function AccountSettings() {
         throw new Error('Format alamat wallet tidak valid.');
       }
 
+      // PERBAIKAN: Tambahkan 'undefined' di parameter kedua (password) 
+      // agar 'name' dan 'wallet' masuk ke urutan yang benar sesuai useAuth.tsx
       await updateAccount(
         email !== profile?.email ? email : undefined, 
+        undefined, // newPassword dikosongkan
         name !== profile?.name ? name : undefined,
         wallet !== profile?.walletAddress ? wallet : undefined
       );
@@ -86,7 +88,7 @@ export default function AccountSettings() {
             </div>
           </div>
 
-          <div className="space-y-1.5">
+          <div className="md:col-span-2 space-y-1.5">
             <label className="text-[10px] font-bold text-stone-400 uppercase tracking-widest pl-1">Alamat Wallet (Ethereum/EVM)</label>
             <div className="relative">
               <Wallet className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-300" />
