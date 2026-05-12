@@ -41,9 +41,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (authUser) {
           const email = authUser.email?.toLowerCase() || '';
           
-          // Guard: Izinkan domain UPN, email mahasiswa, email wallet deterministik, atau bypass admin
           const isAllowedDomain = email.endsWith('@upnyk.ac.id') || email.endsWith('@student.upnyk.ac.id');
-          const isAdminBypass = email === 'satriaanjasmara04@gmail.com'; 
+          const isAdminBypass = email === 'satriaanjasmara04@gmail.com' || email === 'cndrmhrdka@gmail.com' || email === 'satriadian091@gmail.com'; 
 
           if (!isAllowedDomain && !isAdminBypass) {
             await firebaseSignOut(auth);
