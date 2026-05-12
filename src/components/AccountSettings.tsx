@@ -9,7 +9,6 @@ export default function AccountSettings() {
   const [name, setName] = useState(profile?.name || '');
   const [email, setEmail] = useState(profile?.email || '');
   const [wallet, setWallet] = useState(profile?.walletAddress || '');
-  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -29,13 +28,11 @@ export default function AccountSettings() {
 
       await updateAccount(
         email !== profile?.email ? email : undefined, 
-        password || undefined, 
         name !== profile?.name ? name : undefined,
         wallet !== profile?.walletAddress ? wallet : undefined
       );
 
       setSuccess(true);
-      if (password) setPassword('');
     } catch (err: any) {
       setError(err.message || 'Gagal memperbarui akun.');
     } finally {
@@ -103,27 +100,13 @@ export default function AccountSettings() {
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-stone-400 uppercase tracking-widest pl-1">Password Baru (Opsional)</label>
-            <div className="relative">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-300" />
-              <input 
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder="Biarkan kosong jika tidak diubah"
-                className="w-full pl-10 pr-4 py-3 bg-stone-50 border border-stone-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-stone-900 transition-all font-medium"
-              />
-            </div>
-          </div>
-
           <div className="md:col-span-2 space-y-4 pt-2">
             {isWalletUser && (
               <div className="p-4 bg-blue-50 border border-blue-100 rounded-2xl flex gap-3 items-start">
                 <AlertCircle className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
                 <div className="text-xs text-blue-800 leading-relaxed">
                   <p className="font-bold mb-1 italic">Akun Terkoneksi Wallet</p>
-                  Anda dapat menambahkan email dan password permanen di atas. Setelah diperbarui, Anda tetap bisa login menggunakan wallet, atau menggunakan email dan password tersebut secara langsung.
+                  Anda dapat menambahkan akun google. Setelah diperbarui, Anda tetap bisa login menggunakan wallet, atau menggunakan akun google tersebut secara langsung.
                 </div>
               </div>
             )}

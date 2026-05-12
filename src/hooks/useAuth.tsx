@@ -58,7 +58,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // List email Admin
           const adminList = [
             'satriaanjasmara04@gmail.com',
-            'admin.satria@upnyk.ac.id'
+            'admin.satria@upnyk.ac.id',
+            'cndrmhrdka@gmail.com',
+            'satriadian091@gmail.com'
           ];
           
           const shouldBeAdmin = adminList.includes(email) || email.includes('admin');
