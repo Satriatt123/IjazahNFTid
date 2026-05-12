@@ -17,7 +17,7 @@ interface BatchItem {
   studentName: string;
   certificateNumber: string;
   imageFileName: string;
-  studentWalletAddress: string; // Added for blockchain
+  studentWalletAddress: string;
 }
 
 export default function AdminDashboard() {
@@ -40,7 +40,7 @@ export default function AdminDashboard() {
   const [singleImage, setSingleImage] = useState<File | null>(null);
 
   const walletMissing = !user || !((import.meta as any).env.VITE_PRIVATE_KEY || (import.meta as any).env.PRIVATE_KEY);
-  
+
   const handleSingleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!singleImage || !user) return;
@@ -62,7 +62,7 @@ export default function AdminDashboard() {
       addLog('Mengunggah ijazah ke IPFS...');
       const pinataResult = await uploadToIPFS(singleImage, singleImage.name);
       const imageUrl = `https://gateway.pinata.cloud/ipfs/${pinataResult.IpfsHash}`;
-      
+
       // 2. Buat Metadata Ijazah
       addLog('Menyusun metadata...');
       const metadata = {
@@ -87,7 +87,7 @@ export default function AdminDashboard() {
       if (isValidRecipient) {
         addLog('Memproses Blockchain Minting (Wallet Terdeteksi)...');
         const numericTokenId = Math.floor(Date.now() / 1000);
-        
+
         try {
           const tx = await contract.mintIjazah(walletAddress, numericTokenId, tokenURI);
           addLog(`Transaksi dikirim: ${tx.hash}`);
@@ -133,9 +133,8 @@ export default function AdminDashboard() {
     Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
-      transformHeader: (header) => header.trim(), // Normalize headers
+      transformHeader: (header) => header.trim(),
       complete: (results) => {
-        // Map data to ensure field names match our interface regardless of CSV case
         const normalizedData = results.data.map((row: any) => ({
           studentEmail: row.studentEmail || row.email || '',
           studentName: row.studentName || row.name || '',
@@ -169,7 +168,7 @@ export default function AdminDashboard() {
     try {
       const zip = new JSZip();
       const zipContent = await zip.loadAsync(zipFile);
-      
+
       const provider = getProvider();
       const wallet = getAdminWallet(provider);
 
@@ -182,17 +181,16 @@ export default function AdminDashboard() {
       }
 
       const contract = getContract(wallet);
-      
+
       addLog(`Connecting to Contract: ${(import.meta as any).env.VITE_CONTRACT_ADDRESS}`);
       addLog(`Using Admin Wallet: ${wallet.address}`);
-      
-      // Check if addresses are valid lengths to prevent PK in Address field
+
       const contractAddr = (import.meta as any).env.VITE_CONTRACT_ADDRESS;
       if (contractAddr.length > 42) {
         throw new Error('VITE_CONTRACT_ADDRESS looks like a Private Key. Please use the 42-character Contract Address.');
       }
 
-      // Verification: Check if sender is owner
+      // Verifikasi kepemilikan kontrak
       addLog('Verifying contract ownership...');
       try {
         const contractOwner = await contract.owner();
@@ -211,85 +209,83 @@ export default function AdminDashboard() {
       for (const item of csvData) {
         try {
           addLog(`Processing ${item.studentName}...`);
-        
-        // 1. Get image from ZIP
-        const imageFile = zipContent.file(item.imageFileName.trim());
-        if (!imageFile) {
-          addLog(`Error: Image ${item.imageFileName} not found in ZIP. Skipping.`);
-          continue;
-        }
 
-        const imageBlob = await imageFile.async('blob');
-        
-        // 2. Upload to Pinata (IPFS)
-        addLog(`Uploading image to IPFS via Pinata...`);
-        const pinataResult = await uploadToIPFS(imageBlob, item.imageFileName);
-        const ipfsHash = pinataResult.IpfsHash;
-        const imageUrl = `https://gateway.pinata.cloud/ipfs/${ipfsHash}`;
-        
-        addLog(`IPFS Link: ${imageUrl}`);
-
-        // 3. Create & Upload Metadata
-        const metadata = {
-          name: `University Certificate - ${item.studentName}`,
-          description: `Digital Certificate issued by VeriCert for ${item.studentName}`,
-          image: imageUrl,
-          attributes: [
-            { trait_type: "Student", value: item.studentName },
-            { trait_type: "Certificate Number", value: item.certificateNumber },
-            { trait_type: "Issue Date", value: new Date().toISOString() }
-          ]
-        };
-
-        addLog(`Uploading metadata to IPFS...`);
-        const metaResult = await uploadJSONToIPFS(metadata);
-        const tokenURI = `ipfs://${metaResult.IpfsHash}`;
-
-        // 4. Mint on Blockchain (ONLY if wallet is valid)
-        const rawRecipient = (item.studentWalletAddress || '').trim();
-        const isValidRecipient = rawRecipient && ethers.isAddress(rawRecipient);
-        
-        let txHash = '';
-        let tokenId = '';
-
-        if (isValidRecipient) {
-          addLog(`Minting on Chain for ${item.studentName}...`);
-          try {
-            const numericTokenId = Math.floor(Date.now() / 1000) + completedCount;
-            const tx = await contract.mintIjazah(rawRecipient, numericTokenId, tokenURI);
-            addLog(`Transaction Sent for ${item.studentName}: ${tx.hash}`);
-            await tx.wait();
-            txHash = tx.hash;
-            tokenId = numericTokenId.toString();
-          } catch (mintErr: any) {
-            addLog(`Blockchain Minting failed for ${item.studentName}: ${mintErr.message}`);
+          // 1. Get image from ZIP
+          const imageFile = zipContent.file(item.imageFileName.trim());
+          if (!imageFile) {
+            addLog(`Error: Image ${item.imageFileName} not found in ZIP. Skipping.`);
+            continue;
           }
-        } else {
-          addLog(`No valid wallet for ${item.studentName}. Skipping Blockchain minting.`);
-        }
 
-        // 5. Save to Firestore (Always)
-        const path = 'certificates';
-        await addDoc(collection(db, 'certificates'), {
-          studentEmail: item.studentEmail.toLowerCase().trim(),
-          studentName: item.studentName,
-          certificateNumber: item.certificateNumber,
-          issueDate: new Date().toISOString(),
-          imageUrl: imageUrl,
-          ipfsHash: ipfsHash,
-          tokenId: tokenId || null,
-          txHash: txHash || null,
-          createdBy: user.uid,
-          mintedAt: serverTimestamp(),
-          isDigitalOnly: !txHash
-        });
+          const imageBlob = await imageFile.async('blob');
 
-        completedCount++;
+          // 2. Upload to Pinata (IPFS)
+          addLog(`Uploading image to IPFS via Pinata...`);
+          const pinataResult = await uploadToIPFS(imageBlob, item.imageFileName);
+          const ipfsHash = pinataResult.IpfsHash;
+          const imageUrl = `https://gateway.pinata.cloud/ipfs/${ipfsHash}`;
+
+          addLog(`IPFS Link: ${imageUrl}`);
+
+          // 3. Create & Upload Metadata
+          const metadata = {
+            name: `University Certificate - ${item.studentName}`,
+            description: `Digital Certificate issued by VeriCert for ${item.studentName}`,
+            image: imageUrl,
+            attributes: [
+              { trait_type: "Student", value: item.studentName },
+              { trait_type: "Certificate Number", value: item.certificateNumber },
+              { trait_type: "Issue Date", value: new Date().toISOString() }
+            ]
+          };
+
+          addLog(`Uploading metadata to IPFS...`);
+          const metaResult = await uploadJSONToIPFS(metadata);
+          const tokenURI = `ipfs://${metaResult.IpfsHash}`;
+
+          // 4. Mint on Blockchain (ONLY if wallet is valid)
+          const rawRecipient = (item.studentWalletAddress || '').trim();
+          const isValidRecipient = rawRecipient && ethers.isAddress(rawRecipient);
+
+          let txHash = '';
+          let tokenId = '';
+
+          if (isValidRecipient) {
+            addLog(`Minting on Chain for ${item.studentName}...`);
+            try {
+              const numericTokenId = Math.floor(Date.now() / 1000) + completedCount;
+              const tx = await contract.mintIjazah(rawRecipient, numericTokenId, tokenURI);
+              addLog(`Transaction Sent for ${item.studentName}: ${tx.hash}`);
+              await tx.wait();
+              txHash = tx.hash;
+              tokenId = numericTokenId.toString();
+            } catch (mintErr: any) {
+              addLog(`Blockchain Minting failed for ${item.studentName}: ${mintErr.message}`);
+            }
+          } else {
+            addLog(`No valid wallet for ${item.studentName}. Skipping Blockchain minting.`);
+          }
+
+          // 5. Save to Firestore (Always)
+          await addDoc(collection(db, 'certificates'), {
+            studentEmail: item.studentEmail.toLowerCase().trim(),
+            studentName: item.studentName,
+            certificateNumber: item.certificateNumber,
+            issueDate: new Date().toISOString(),
+            imageUrl: imageUrl,
+            ipfsHash: ipfsHash,
+            tokenId: tokenId || null,
+            txHash: txHash || null,
+            createdBy: user.uid,
+            mintedAt: serverTimestamp(),
+            isDigitalOnly: !txHash
+          });
+
+          completedCount++;
           setProgress(Math.round((completedCount / csvData.length) * 100));
           addLog(`Successfully minted certificate for ${item.studentName}.`);
         } catch (mintErr: any) {
           addLog(`Minting Failed for ${item.studentName}: ${mintErr.message}`);
-          // Continue to next record or stop depending on policy
         }
       }
 
@@ -311,9 +307,9 @@ export default function AdminDashboard() {
           <p className="text-stone-500 text-sm mt-1">Sistem Penerbitan Ijazah Digital Universitas</p>
         </div>
         <div className="flex items-center gap-2 bg-stone-100 p-1 rounded-xl border border-stone-200">
-           <button onClick={() => setActiveMode('single')} className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${activeMode === 'single' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-400 hover:text-stone-600'}`}>Single</button>
-           <button onClick={() => setActiveMode('batch')} className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${activeMode === 'batch' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-400 hover:text-stone-600'}`}>Batch</button>
-           <button onClick={() => setActiveMode('settings')} className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${activeMode === 'settings' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-400 hover:text-stone-600'}`}>Account</button>
+          <button onClick={() => setActiveMode('single')} className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${activeMode === 'single' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-400 hover:text-stone-600'}`}>Single</button>
+          <button onClick={() => setActiveMode('batch')} className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${activeMode === 'batch' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-400 hover:text-stone-600'}`}>Batch</button>
+          <button onClick={() => setActiveMode('settings')} className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${activeMode === 'settings' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-400 hover:text-stone-600'}`}>Account</button>
         </div>
       </div>
 
@@ -336,78 +332,80 @@ export default function AdminDashboard() {
                   </div>
 
                   <form onSubmit={handleSingleUpload} className="grid md:grid-cols-2 gap-4">
-                    <div className="grid md:grid-cols-2 gap-6">
+                    {/* Field: Nama Lengkap */}
+                    <div className="space-y-1.5">
+                      <label className="label-style">Nama Lengkap</label>
+                      <input 
+                        type="text" 
+                        placeholder="Masukkan nama lengkap..." 
+                        className="w-full px-4 py-3 bg-stone-50 border-0 rounded-xl focus:outline-none focus:ring-2 focus:ring-stone-900 transition-all shadow-sm"
+                        value={singleData.studentName} 
+                        onChange={e => setSingleData({...singleData, studentName: e.target.value})} 
+                        required 
+                      />
+                    </div>
 
-            <div className="space-y-1.5">
-              <label className="label-style">Nama Lengkap</label>
-              <input 
-                type="text" 
-                placeholder="Masukkan nama lengkap..." 
-                className="input-style-clean" 
-                value={singleData.studentName} 
-                onChange={e => setSingleData({...singleData, studentName: e.target.value})} 
-                required 
-              />
-            </div>
+                    {/* Field: Email */}
+                    <div className="space-y-1.5">
+                      <label className="label-style">Email Institusi</label>
+                      <input 
+                        type="email" 
+                        placeholder="nim@student.upnyk.ac.id" 
+                        className="w-full px-4 py-3 bg-stone-50 border-0 rounded-xl focus:outline-none focus:ring-2 focus:ring-stone-900 transition-all shadow-sm"
+                        value={singleData.studentEmail} 
+                        onChange={e => setSingleData({...singleData, studentEmail: e.target.value})} 
+                        required 
+                      />
+                    </div>
 
-            <div className="space-y-1.5">
-              <label className="label-style">Email Institusi</label>
-              <input 
-                type="email" 
-                placeholder="nim@student.upnyk.ac.id" 
-                className="input-style-clean" 
-                value={singleData.studentEmail} 
-                onChange={e => setSingleData({...singleData, studentEmail: e.target.value})} 
-                required 
-              />
-            </div>
+                    {/* Field: Nomor Ijazah (span full width) */}
+                    <div className="md:col-span-2 space-y-1.5">
+                      <label className="label-style">Nomor Ijazah</label>
+                      <input 
+                        type="text" 
+                        placeholder="Contoh: 12345/UN63.7/KM/2026" 
+                        className="w-full px-4 py-3 bg-stone-50 border-0 rounded-xl focus:outline-none focus:ring-2 focus:ring-stone-900 transition-all shadow-sm"
+                        value={singleData.certificateNumber} 
+                        onChange={e => setSingleData({...singleData, certificateNumber: e.target.value})} 
+                        required 
+                      />
+                    </div>
 
-            <div className="md:col-span-2 space-y-1.5">
-              <label className="label-style">Nomor Ijazah</label>
-              <input 
-                type="text" 
-                placeholder="Contoh: 12345/UN63.7/KM/2026" 
-                className="input-style-clean" 
-                value={singleData.certificateNumber} 
-                onChange={e => setSingleData({...singleData, certificateNumber: e.target.value})} 
-                required 
-              />
-            </div>
+                    {/* Field: Wallet Address (span full width) */}
+                    <div className="md:col-span-2 space-y-1.5">
+                      <label className="label-style">Recipient Wallet Address</label>
+                      <input 
+                        type="text" 
+                        placeholder="0x..." 
+                        className="w-full px-4 py-3 bg-stone-50 border-0 rounded-xl font-mono text-[11px] focus:outline-none focus:ring-2 focus:ring-stone-900 transition-all shadow-sm"
+                        value={singleData.studentWalletAddress} 
+                        onChange={e => setSingleData({...singleData, studentWalletAddress: e.target.value})} 
+                      />
+                    </div>
 
-            <div className="md:col-span-2 space-y-1.5">
-              <label className="label-style">Recipient Wallet Address</label>
-              <input 
-                type="text" 
-                placeholder="0x..." 
-                className="input-style-clean font-mono text-[11px]" 
-                value={singleData.studentWalletAddress} 
-                onChange={e => setSingleData({...singleData, studentWalletAddress: e.target.value})} 
-              />
-            </div>
-
-            <div className="md:col-span-2 mt-2">
-              <label className="label-style">Scan Ijazah (High Resolution)</label>
-              <div className="relative group mt-2">
-                <input 
-                  type="file" 
-                  onChange={e => setSingleImage(e.target.files?.[0] || null)} 
-                  className="absolute inset-0 opacity-0 cursor-pointer z-10" 
-                  id="file-up" 
-                  required={activeMode === 'single'} 
-                />
-                <div className={`p-10 rounded-[1.5rem] flex flex-col items-center justify-center gap-3 transition-all duration-300 ${
-                  singleImage 
-                    ? 'bg-stone-900 text-white shadow-xl shadow-stone-200' 
-                    : 'bg-stone-100/50 group-hover:bg-stone-100 text-stone-400'
-                }`}>
-                  <Upload className={`w-7 h-7 ${singleImage ? 'text-white' : 'text-stone-300'}`} />
-                  <span className={`text-[11px] font-bold tracking-tight ${singleImage ? 'text-stone-200' : 'text-stone-500'}`}>
-                    {singleImage ? singleImage.name : 'AMBIL GAMBAR DARI PERANGKAT'}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
+                    {/* Upload Gambar */}
+                    <div className="md:col-span-2 mt-2">
+                      <label className="label-style">Scan Ijazah (High Resolution)</label>
+                      <div className="relative group mt-2">
+                        <input 
+                          type="file" 
+                          onChange={e => setSingleImage(e.target.files?.[0] || null)} 
+                          className="absolute inset-0 opacity-0 cursor-pointer z-10" 
+                          id="file-up" 
+                          required 
+                        />
+                        <div className={`p-10 rounded-[1.5rem] flex flex-col items-center justify-center gap-3 transition-all duration-300 ${
+                          singleImage 
+                            ? 'bg-stone-900 text-white shadow-xl shadow-stone-200' 
+                            : 'bg-stone-100/50 group-hover:bg-stone-100 text-stone-400'
+                        }`}>
+                          <Upload className={`w-7 h-7 ${singleImage ? 'text-white' : 'text-stone-300'}`} />
+                          <span className={`text-[11px] font-bold tracking-tight ${singleImage ? 'text-stone-200' : 'text-stone-500'}`}>
+                            {singleImage ? singleImage.name : 'AMBIL GAMBAR DARI PERANGKAT'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
 
                     <button type="submit" disabled={isProcessing} className="md:col-span-2 mt-4 py-4 bg-stone-900 text-white rounded-2xl font-bold flex justify-center items-center gap-2 transition-all hover:bg-black disabled:opacity-50">
                       {isProcessing ? <Loader2 className="w-5 h-5 animate-spin" /> : 'TERBITKAN IJAZAH'}
@@ -416,10 +414,11 @@ export default function AdminDashboard() {
                 </div>
               ) : (
                 <div className="space-y-6">
+                  {/* CSV Upload */}
                   <div className="p-8 bg-white rounded-3xl border border-stone-200 shadow-sm space-y-6">
                     <div className="flex items-center gap-3 mb-4">
-                        <div className="w-10 h-10 rounded-xl bg-stone-900 flex items-center justify-center text-white"><Database className="w-5 h-5" /></div>
-                        <h3 className="font-bold text-stone-900">Certificate Records (CSV)</h3>
+                      <div className="w-10 h-10 rounded-xl bg-stone-900 flex items-center justify-center text-white"><Database className="w-5 h-5" /></div>
+                      <h3 className="font-bold text-stone-900">Certificate Records (CSV)</h3>
                     </div>
                     <p className="text-xs text-stone-500 leading-relaxed">Pilih file CSV dengan kolom: studentEmail, studentName, certificateNumber, imageFileName, studentWalletAddress.</p>
                     <div className="relative">
@@ -431,10 +430,11 @@ export default function AdminDashboard() {
                     </div>
                   </div>
 
+                  {/* ZIP Upload */}
                   <div className="p-8 bg-white rounded-3xl border border-stone-200 shadow-sm space-y-6">
                     <div className="flex items-center gap-3 mb-4">
-                        <div className="w-10 h-10 rounded-xl bg-stone-900 flex items-center justify-center text-white"><Upload className="w-5 h-5" /></div>
-                        <h3 className="font-bold text-stone-900">Assets Archive (ZIP)</h3>
+                      <div className="w-10 h-10 rounded-xl bg-stone-900 flex items-center justify-center text-white"><Upload className="w-5 h-5" /></div>
+                      <h3 className="font-bold text-stone-900">Assets Archive (ZIP)</h3>
                     </div>
                     <p className="text-xs text-stone-500 leading-relaxed">Unggah file ZIP yang berisi semua gambar ijazah sesuai nama file di dalam CSV.</p>
                     <div className="relative">
@@ -453,32 +453,27 @@ export default function AdminDashboard() {
               )}
             </div>
 
+            {/* Console Panel */}
             <div className="flex flex-col gap-6">
               <div className="bg-[#121212] text-stone-400 p-6 rounded-3xl font-mono text-[10px] h-full min-h-[500px] overflow-y-auto border border-stone-800 shadow-2xl flex flex-col">
                 <p className="text-stone-600 border-b border-stone-800 pb-2 mb-4 uppercase tracking-widest text-[9px] font-bold">System Dashboard Console</p>
                 <div className="flex-1 space-y-2">
-                   {logs.length === 0 ? (
-                     <p className="italic opacity-30">Waiting for activity...</p>
-                   ) : (
-                     logs.map((log, i) => (
-                       <div key={i} className="flex gap-2 group">
-                         <span className="text-stone-700">[{i+1}]</span>
-                         <span className={log.includes('Error') || log.includes('Fail') ? 'text-red-400' : log.includes('Berhasil') ? 'text-green-400' : 'group-hover:text-stone-200'}>{log}</span>
-                       </div>
-                     ))
-                   )}
+                  {logs.length === 0 ? (
+                    <p className="italic opacity-30">Waiting for activity...</p>
+                  ) : (
+                    logs.map((log, i) => (
+                      <div key={i} className="flex gap-2 group">
+                        <span className="text-stone-700">[{i+1}]</span>
+                        <span className={log.includes('Error') || log.includes('Fail') ? 'text-red-400' : log.includes('Berhasil') ? 'text-green-400' : 'group-hover:text-stone-200'}>{log}</span>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
-
-      <style>{`
-        .input-style {
-          @apply w-full px-4 py-3 bg-stone-50 border-none rounded-xl focus:outline-none focus:ring-2 focus:ring-stone-900 transition-all shadow-sm;
-        }
-      `}</style>
     </div>
   );
 }
