@@ -8,8 +8,8 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   updateEmail,
-  setPersistence,           // Untuk mengatur durasi sesi
-  browserSessionPersistence // Agar sesi habis saat tab ditutup
+  setPersistence,
+  browserSessionPersistence 
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
@@ -39,9 +39,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { signMessageAsync } = useSignMessage();
 
   useEffect(() => {
+    // 1. Cek tanda sesi aktif di tab ini
+    const isTabActive = sessionStorage.getItem('ijazah_session_active');
+
     const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
       try {
         if (authUser) {
+          // 2. Jika Firebase mendeteksi user TAPI tanda sesi tab hilang, paksa logout
+          if (!isTabActive) {
+            await firebaseSignOut(auth);
+            if (isConnected) await disconnectAsync();
+            setUser(null);
+            setProfile(null);
+            setLoading(false);
+            return;
+          }
+
           const email = authUser.email?.toLowerCase() || '';
           const isAllowedDomain = email.endsWith('@upnyk.ac.id') || email.endsWith('@student.upnyk.ac.id');
           const adminBypass = [
@@ -62,11 +75,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const docRef = doc(db, 'users', authUser.uid);
           const docSnap = await getDoc(docRef);
 
-          const adminList = [
-            ...adminBypass,
-            'admin.satria@upnyk.ac.id'
-          ];
-          
+          const adminList = [...adminBypass, 'admin.satria@upnyk.ac.id'];
           const shouldBeAdmin = adminList.includes(email) || email.includes('admin');
 
           if (docSnap.exists()) {
@@ -102,16 +111,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [isConnected, disconnectAsync]);
 
   const loginWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
     
     try {
-      // Set agar sesi habis ketika browser ditutup
-      await setPersistence(auth, browserSessionPersistence);
+      await setPersistence(auth, browserSessionPersistence); //
       const result = await signInWithPopup(auth, provider);
+      
+      // 3. Set tanda sesi aktif agar diakui oleh useEffect
+      sessionStorage.setItem('ijazah_session_active', 'true');
+      
       return result.user;
     } catch (error) {
       throw error;
@@ -128,14 +140,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const message = `LOGIN IJAZAH DIGITAL ID\n\nAlamat: ${address}\nTimestamp: ${new Date().toISOString()}`;
       await signMessageAsync({ message, account: address as `0x${string}` });
 
-      // Gunakan Session Persistence untuk login wallet juga
-      await setPersistence(auth, browserSessionPersistence);
+      await setPersistence(auth, browserSessionPersistence); //
 
       try {
-        await signInWithEmailAndPassword(auth, walletEmail, walletPass);
+        const result = await signInWithEmailAndPassword(auth, walletEmail, walletPass);
+        // 4. Set tanda sesi aktif untuk login wallet
+        sessionStorage.setItem('ijazah_session_active', 'true');
       } catch (err: any) {
         if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
           await createUserWithEmailAndPassword(auth, walletEmail, walletPass);
+          sessionStorage.setItem('ijazah_session_active', 'true');
         } else {
           throw err;
         }
@@ -180,7 +194,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async () => {
-    await firebaseSignOut(auth);
+    sessionStorage.removeItem('ijazah_session_active');
+    await firebaseSignOut(auth); //
     if (isConnected) {
       await disconnectAsync();
     }
