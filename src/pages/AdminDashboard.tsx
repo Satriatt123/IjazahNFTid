@@ -336,35 +336,78 @@ export default function AdminDashboard() {
                   </div>
 
                   <form onSubmit={handleSingleUpload} className="grid md:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold text-stone-400 uppercase tracking-widest pl-1">Nama Mahasiswa</label>
-                      <input type="text" placeholder="Nama Lengkap Mahasiswa" className="input-style" value={singleData.studentName} onChange={e => setSingleData({...singleData, studentName: e.target.value})} required />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold text-stone-400 uppercase tracking-widest pl-1">Email Mahasiswa</label>
-                      <input type="email" placeholder="mahasiswa@upnyk.ac.id" className="input-style" value={singleData.studentEmail} onChange={e => setSingleData({...singleData, studentEmail: e.target.value})} required />
-                    </div>
-                    <div className="md:col-span-2 space-y-1.5">
-                      <label className="text-[10px] font-bold text-stone-400 uppercase tracking-widest pl-1">Nomor Ijazah</label>
-                      <input type="text" placeholder="SC-2024-001" className="input-style" value={singleData.certificateNumber} onChange={e => setSingleData({...singleData, certificateNumber: e.target.value})} required />
-                    </div>
-                    <div className="md:col-span-2 space-y-1.5">
-                      <label className="text-[10px] font-bold text-stone-400 uppercase tracking-widest pl-1">Wallet Address (Opsional)</label>
-                      <input type="text" placeholder="0x..." className="input-style font-mono text-xs" value={singleData.studentWalletAddress} onChange={e => setSingleData({...singleData, studentWalletAddress: e.target.value})} />
-                    </div>
-                    
-                    <div className="md:col-span-2 mt-4">
-                      <label className="text-[10px] font-bold text-stone-400 uppercase tracking-widest pl-1">Scan Ijazah</label>
-                      <div className="relative group mt-1.5">
-                        <input type="file" onChange={e => setSingleImage(e.target.files?.[0] || null)} className="absolute inset-0 opacity-0 cursor-pointer z-10" id="file-up" required={activeMode === 'single'} />
-                        <div className={`p-8 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center gap-2 transition-all ${singleImage ? 'bg-stone-50 border-stone-900' : 'border-stone-100 bg-stone-50'}`}>
-                          <Upload className={`w-8 h-8 ${singleImage ? 'text-stone-900' : 'text-stone-300'}`} />
-                          <span className="text-xs font-bold text-stone-600">
-                            {singleImage ? singleImage.name : 'Klik atau Drop Gambar Ijazah (Scanned)'}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
+                    <div className="grid md:grid-cols-2 gap-6">
+
+            <div className="space-y-1.5">
+              <label className="label-style">Nama Lengkap</label>
+              <input 
+                type="text" 
+                placeholder="Masukkan nama lengkap..." 
+                className="input-style-clean" 
+                value={singleData.studentName} 
+                onChange={e => setSingleData({...singleData, studentName: e.target.value})} 
+                required 
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="label-style">Email Institusi</label>
+              <input 
+                type="email" 
+                placeholder="nim@student.upnyk.ac.id" 
+                className="input-style-clean" 
+                value={singleData.studentEmail} 
+                onChange={e => setSingleData({...singleData, studentEmail: e.target.value})} 
+                required 
+              />
+            </div>
+
+            <div className="md:col-span-2 space-y-1.5">
+              <label className="label-style">Nomor Ijazah</label>
+              <input 
+                type="text" 
+                placeholder="Contoh: 12345/UN63.7/KM/2026" 
+                className="input-style-clean" 
+                value={singleData.certificateNumber} 
+                onChange={e => setSingleData({...singleData, certificateNumber: e.target.value})} 
+                required 
+              />
+            </div>
+
+            <div className="md:col-span-2 space-y-1.5">
+              <label className="label-style">Recipient Wallet Address</label>
+              <input 
+                type="text" 
+                placeholder="0x..." 
+                className="input-style-clean font-mono text-[11px]" 
+                value={singleData.studentWalletAddress} 
+                onChange={e => setSingleData({...singleData, studentWalletAddress: e.target.value})} 
+              />
+            </div>
+
+            <div className="md:col-span-2 mt-2">
+              <label className="label-style">Scan Ijazah (High Resolution)</label>
+              <div className="relative group mt-2">
+                <input 
+                  type="file" 
+                  onChange={e => setSingleImage(e.target.files?.[0] || null)} 
+                  className="absolute inset-0 opacity-0 cursor-pointer z-10" 
+                  id="file-up" 
+                  required={activeMode === 'single'} 
+                />
+                <div className={`p-10 rounded-[1.5rem] flex flex-col items-center justify-center gap-3 transition-all duration-300 ${
+                  singleImage 
+                    ? 'bg-stone-900 text-white shadow-xl shadow-stone-200' 
+                    : 'bg-stone-100/50 group-hover:bg-stone-100 text-stone-400'
+                }`}>
+                  <Upload className={`w-7 h-7 ${singleImage ? 'text-white' : 'text-stone-300'}`} />
+                  <span className={`text-[11px] font-bold tracking-tight ${singleImage ? 'text-stone-200' : 'text-stone-500'}`}>
+                    {singleImage ? singleImage.name : 'AMBIL GAMBAR DARI PERANGKAT'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
 
                     <button type="submit" disabled={isProcessing} className="md:col-span-2 mt-4 py-4 bg-stone-900 text-white rounded-2xl font-bold flex justify-center items-center gap-2 transition-all hover:bg-black disabled:opacity-50">
                       {isProcessing ? <Loader2 className="w-5 h-5 animate-spin" /> : 'TERBITKAN IJAZAH'}
