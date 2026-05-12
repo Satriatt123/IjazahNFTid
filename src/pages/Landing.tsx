@@ -60,7 +60,7 @@ export default function Landing() {
       {/* Footer Info */}
       <div className="absolute bottom-6 w-full text-center z-10">
         <p className="text-[10px] text-white/40 uppercase tracking-[0.3em]">
-          Powered by Sadewa Protocol &bull; UPN "Veteran" Yogyakarta
+          Buatan Tim Barber &bull; UPN "Veteran" Yogyakarta
         </p>
       </div>
 
