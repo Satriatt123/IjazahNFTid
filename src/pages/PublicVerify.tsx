@@ -231,7 +231,7 @@ export default function PublicVerify({ onBack }: PublicVerifyProps) {
                       )}
                       <div>
                         <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400 mb-1">Issued By</p>
-                        <p className="font-semibold text-stone-900">VeriCert University Protocol</p>
+                        <p className="font-semibold text-stone-900">IJazah Digital ID</p>
                       </div>
                    </div>
                 </div>
@@ -248,10 +248,6 @@ export default function PublicVerify({ onBack }: PublicVerifyProps) {
                          <div>
                             <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400 mb-1">Recipient Name</h4>
                             <p className="text-xl font-serif italic text-stone-900">{cert.studentName}</p>
-                         </div>
-                         <div>
-                            <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400 mb-1">Course / Program</h4>
-                            <p className="text-xl font-serif italic text-stone-900">{cert.courseName}</p>
                          </div>
                       </div>
 
