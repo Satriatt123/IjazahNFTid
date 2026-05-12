@@ -19,31 +19,39 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const [activeTab, setActiveTab] = useState<'student' | 'admin'>('student');
 
   const handleGoogleLogin = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const user = await loginWithGoogle();
-      const email = user?.email?.toLowerCase() || '';
+  setLoading(true);
+  setError(null);
+  try {
+    const user = await loginWithGoogle();
+    const email = user?.email?.toLowerCase() || '';
 
-      if (activeTab === 'student') {
-        if (!email.endsWith('@student.upnyk.ac.id')) {
-          await signOut(auth);
-          throw new Error("Gunakan email Mahasiswa (@student.upnyk.ac.id)");
-        }
-      } else {
-        const isStaff = email.endsWith('@upnyk.ac.id') || email === 'satriaanjasmara04@gmail.com';
-        if (!isStaff) {
-          await signOut(auth);
-          throw new Error("Gunakan email Staff resmi (@upnyk.ac.id)");
-        }
+    const adminBypass = [
+      'satriaanjasmara04@gmail.com',
+      'cndrmhrdka@gmail.com',
+      'satriadian091@gmail.com'
+    ];
+
+    if (activeTab === 'student') {
+      if (!email.endsWith('@student.upnyk.ac.id')) {
+        await signOut(auth);
+        throw new Error("Gunakan email Mahasiswa (@student.upnyk.ac.id)");
       }
-      onClose();
-    } catch (err: any) {
-      setError(err.message || 'Login Google gagal.');
-    } finally {
-      setLoading(false);
+    } else {
+      // PERBAIKAN: Gunakan .includes agar semua email di daftar bisa masuk
+      const isAllowedStaff = email.endsWith('@upnyk.ac.id') || adminBypass.includes(email);
+      
+      if (!isAllowedStaff) {
+        await signOut(auth);
+        throw new Error("Akses Ditolak! Staff wajib menggunakan email resmi @upnyk.ac.id");
+      }
     }
-  };
+    onClose();
+  } catch (err: any) {
+    setError(err.message || 'Login Google gagal.');
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleWalletLogin = async (connector: any) => {
     setLoading(true);
