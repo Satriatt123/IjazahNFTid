@@ -58,7 +58,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
           const adminList = [
             'satriaanjasmara04@gmail.com',
-            'admin.satria@upnyk.ac.id',
             'cndrmhrdka@gmail.com',
             'satriadian091@gmail.com'
           ];
