@@ -1,0 +1,46 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile with roles for the certificate system",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "name": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "student"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "Certificate": {
+      "title": "Certificate",
+      "description": "Represents a digital certificate (NFT)",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "studentEmail": { "type": "string", "format": "email" },
+        "studentName": { "type": "string" },
+        "certificateNumber": { "type": "string" },
+        "courseName": { "type": "string" },
+        "issueDate": { "type": "string", "format": "date-time" },
+        "imageUrl": { "type": "string", "format": "uri" },
+        "tokenId": { "type": "string" },
+        "txHash": { "type": "string" },
+        "createdBy": { "type": "string" },
+        "mintedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["studentEmail", "certificateNumber", "tokenId"]
+    }
+  },
+  "firestore": {
+    "users/{uid}": {
+      "schema": "User",
+      "description": "Public and private user profiles"
+    },
+    "certificates/{certificateId}": {
+      "schema": "Certificate",
+      "description": "Collection of all minted certificates"
+    }
+  }
+}

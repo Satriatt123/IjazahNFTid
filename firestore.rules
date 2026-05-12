@@ -1,0 +1,125 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Global Helpers ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isEmailVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function getUserData(uid) {
+      return get(/databases/$(database)/documents/users/$(uid)).data;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email in ['satriaanjasmara04@gmail.com', 'admin.satria@upnyk.ac.id', 'wallet_0x4f9215592a3f5c4a9f1a51c66fb03a4613bd2217@upnyk.ac.id'] ||
+        request.auth.token.email.lower().matches('.*admin.*') ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // --- Entity Validations ---
+    
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'email', 'name', 'role', 'createdAt']) &&
+             data.uid == request.auth.uid &&
+             data.role in ['admin', 'student'] &&
+             data.createdAt == request.time;
+    }
+
+    function isValidCertificate(data) {
+      return data.keys().hasAll(['studentEmail', 'studentName', 'certificateNumber', 'courseName', 'issueDate', 'imageUrl', 'createdBy', 'mintedAt']) &&
+             data.studentEmail is string && data.studentEmail.size() <= 256 &&
+             data.studentName is string && data.studentName.size() <= 256 &&
+             data.certificateNumber is string && data.certificateNumber.size() <= 128 &&
+             data.courseName is string && data.courseName.size() <= 256 &&
+             data.imageUrl is string && data.imageUrl.size() <= 1024 &&
+             (data.tokenId == null || (data.tokenId is string && data.tokenId.size() <= 128)) &&
+             (data.txHash == null || (data.txHash is string && data.txHash.size() <= 128)) &&
+             (data.ipfsHash == null || (data.ipfsHash is string && data.ipfsHash.size() <= 128)) &&
+             (data.isDigitalOnly == null || data.isDigitalOnly is bool) &&
+             (data.studentWalletAddress == null || (data.studentWalletAddress is string && data.studentWalletAddress.size() <= 128));
+    }
+
+    // --- Collections ---
+
+    // 1. Users Collection
+    match /users/{uid} {
+      allow get: if isSignedIn() && (request.auth.uid == uid || isAdmin());
+      // Allow searching by walletAddress even if not logged in (to map wallet to email during login)
+      // or at least allow list if user is finding their own record
+      allow list: if isAdmin() || (isSignedIn() && resource.data.uid == request.auth.uid);
+      
+      allow create: if isSignedIn() && uid == request.auth.uid && isValidUser(incoming()) && 
+                    (incoming().role == 'student' || 
+                     request.auth.token.email in ['satriaanjasmara04@gmail.com', 'admin.satria@upnyk.ac.id', 'wallet_0x4f9215592a3f5c4a9f1a51c66fb03a4613bd2217@upnyk.ac.id'] ||
+                     request.auth.token.email.lower().matches('.*admin.*'));
+      
+      allow update: if (isSignedIn() && uid == request.auth.uid && (
+        // Self update of basic fields
+        incoming().diff(existing()).affectedKeys().hasOnly(['name', 'email', 'contactEmail', 'walletAddress']) ||
+        // Auto-upgrade to admin if email matches
+        (incoming().diff(existing()).affectedKeys().hasOnly(['role']) && 
+         (request.auth.token.email in ['satriaanjasmara04@gmail.com', 'admin.satria@upnyk.ac.id', 'wallet_0x4f9215592a3f5c4a9f1a51c66fb03a4613bd2217@upnyk.ac.id'] ||
+          request.auth.token.email.lower().matches('.*admin.*')) &&
+         incoming().role == 'admin')
+      )) || isAdmin();
+    }
+
+    // 2. Certificates Collection
+    match /certificates/{certificateId} {
+      // Allowed for public verification and student dashboard
+      allow list: if true; 
+      
+      // Verification is public by ID
+      allow get: if true; 
+
+      allow create: if isAdmin() && isValidId(certificateId) && 
+                    isValidCertificate(incoming()) &&
+                    incoming().createdBy == request.auth.uid &&
+                    incoming().mintedAt == request.time;
+      
+      allow update: if isSignedIn() && (
+        (isAdmin() && incoming().diff(existing()).affectedKeys().hasOnly(['imageUrl', 'studentName'])) ||
+        (
+          existing().studentEmail.lower() == request.auth.token.email.lower() &&
+          isValidCertificate(incoming()) &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['tokenId', 'txHash', 'isDigitalOnly', 'studentWalletAddress']) &&
+          incoming().studentEmail == existing().studentEmail &&
+          incoming().studentName == existing().studentName &&
+          incoming().certificateNumber == existing().certificateNumber &&
+          incoming().courseName == existing().courseName &&
+          incoming().issueDate == existing().issueDate &&
+          incoming().imageUrl == existing().imageUrl &&
+          incoming().createdBy == existing().createdBy &&
+          incoming().mintedAt == existing().mintedAt
+        )
+      );
+      
+      allow delete: if isAdmin();
+    }
+  }
+}
