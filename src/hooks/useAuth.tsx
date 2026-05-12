@@ -7,9 +7,11 @@ import {
   signOut as firebaseSignOut,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  updateEmail // Tambahkan import ini
+  updateEmail,
+  setPersistence,           // Untuk mengatur durasi sesi
+  browserSessionPersistence // Agar sesi habis saat tab ditutup
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp, updateDoc } from 'firebase/firestore'; // Tambahkan updateDoc
+import { doc, getDoc, setDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 import { UserProfile } from '../types';
 import { useAccount, useDisconnect, useConnect, useSignMessage } from 'wagmi';
@@ -21,7 +23,6 @@ interface AuthContextType {
   loginWithGoogle: () => Promise<User>;
   loginWithWallet: (connector: any) => Promise<void>;
   logout: () => Promise<void>;
-  // TAMBAHKAN BARIS INI:
   updateAccount: (newEmail?: string, newPassword?: string, newName?: string, newWallet?: string) => Promise<void>;
 }
 
@@ -43,9 +44,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (authUser) {
           const email = authUser.email?.toLowerCase() || '';
           const isAllowedDomain = email.endsWith('@upnyk.ac.id') || email.endsWith('@student.upnyk.ac.id');
-          const isAdminBypass = ['satriaanjasmara04@gmail.com', 'cndrmhrdka@gmail.com', 'satriadian091@gmail.com'].includes(email);
+          const adminBypass = [
+            'satriaanjasmara04@gmail.com', 
+            'cndrmhrdka@gmail.com', 
+            'satriadian091@gmail.com'
+          ];
+          const isAllowed = isAllowedDomain || adminBypass.includes(email);
 
-          if (!isAllowedDomain && !isAdminBypass) {
+          if (!isAllowed) {
             await firebaseSignOut(auth);
             setUser(null);
             setProfile(null);
@@ -57,9 +63,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const docSnap = await getDoc(docRef);
 
           const adminList = [
-            'satriaanjasmara04@gmail.com',
-            'cndrmhrdka@gmail.com',
-            'satriadian091@gmail.com'
+            ...adminBypass,
+            'admin.satria@upnyk.ac.id'
           ];
           
           const shouldBeAdmin = adminList.includes(email) || email.includes('admin');
@@ -99,7 +104,48 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => unsubscribe();
   }, []);
 
-  // IMPLEMENTASI FUNGSI UPDATE ACCOUNT
+  const loginWithGoogle = async () => {
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
+    
+    try {
+      // Set agar sesi habis ketika browser ditutup
+      await setPersistence(auth, browserSessionPersistence);
+      const result = await signInWithPopup(auth, provider);
+      return result.user;
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const loginWithWallet = async (connector: any) => {
+    try {
+      const connection = await connectAsync({ connector });
+      const address = connection.accounts[0].toLowerCase();
+      const walletEmail = `wallet_${address}@upnyk.ac.id`;
+      const walletPass = `wallet_pass_${address.slice(0, 12)}`;
+
+      const message = `LOGIN IJAZAH DIGITAL ID\n\nAlamat: ${address}\nTimestamp: ${new Date().toISOString()}`;
+      await signMessageAsync({ message, account: address as `0x${string}` });
+
+      // Gunakan Session Persistence untuk login wallet juga
+      await setPersistence(auth, browserSessionPersistence);
+
+      try {
+        await signInWithEmailAndPassword(auth, walletEmail, walletPass);
+      } catch (err: any) {
+        if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
+          await createUserWithEmailAndPassword(auth, walletEmail, walletPass);
+        } else {
+          throw err;
+        }
+      }
+    } catch (error: any) {
+      console.error('Wallet Login Error:', error);
+      throw error;
+    }
+  };
+
   const updateAccount = async (newEmail?: string, newPassword?: string, newName?: string, newWallet?: string) => {
     if (!auth.currentUser) throw new Error('Anda harus login terlebih dahulu.');
     
@@ -111,65 +157,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (newEmail) profileUpdates.email = newEmail.toLowerCase();
 
     try {
-      // 1. Update Firestore Profile
       if (Object.keys(profileUpdates).length > 0) {
-        const userDocRef = doc(db, 'users', currentUser.uid);
-        await updateDoc(userDocRef, profileUpdates);
+        await updateDoc(doc(db, 'users', currentUser.uid), profileUpdates);
       }
 
-      // 2. Update Firebase Auth Email (Jika berubah)
       if (newEmail && newEmail.toLowerCase() !== currentUser.email?.toLowerCase()) {
         await updateEmail(currentUser, newEmail);
       }
 
-      // 3. Update Password (Jika ada) - Catatan: Membutuhkan re-autentikasi jika sudah lama login
       if (newPassword) {
         const { updatePassword } = await import('firebase/auth');
         await updatePassword(currentUser, newPassword);
       }
 
-      // 4. Update State Lokal (Optimistic Update)
       setProfile(prev => prev ? { ...prev, ...profileUpdates } : null);
-      
     } catch (err: any) {
       if (err.code === 'auth/requires-recent-login') {
-        throw new Error('Sesi ini memerlukan login ulang untuk mengubah informasi sensitif (email/password).');
+        throw new Error('Sesi ini memerlukan login ulang untuk mengubah informasi sensitif.');
       }
       throw err;
     }
   };
 
-  const loginWithGoogle = async () => {
-    const provider = new GoogleAuthProvider();
-    provider.setCustomParameters({ prompt: 'select_account' });
-    try {
-      const result = await signInWithPopup(auth, provider);
-      return result.user;
-    } catch (error) { throw error; }
-  };
-
-  const loginWithWallet = async (connector: any) => {
-    try {
-      const connection = await connectAsync({ connector });
-      const address = connection.accounts[0].toLowerCase();
-      const walletEmail = `wallet_${address}@upnyk.ac.id`;
-      const walletPass = `wallet_pass_${address.slice(0, 12)}`;
-      const message = `LOGIN IJAZAH DIGITAL ID\n\nAlamat: ${address}\nTimestamp: ${new Date().toISOString()}`;
-      await signMessageAsync({ message, account: address as `0x${string}` });
-
-      try {
-        await signInWithEmailAndPassword(auth, walletEmail, walletPass);
-      } catch (err: any) {
-        if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
-          await createUserWithEmailAndPassword(auth, walletEmail, walletPass);
-        } else { throw err; }
-      }
-    } catch (error: any) { throw error; }
-  };
-
   const logout = async () => {
     await firebaseSignOut(auth);
-    if (isConnected) await disconnectAsync();
+    if (isConnected) {
+      await disconnectAsync();
+    }
   };
 
   return (
@@ -180,7 +194,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       loginWithGoogle, 
       loginWithWallet, 
       logout, 
-      updateAccount // PASTIKAN INI DISERTAKAN
+      updateAccount 
     }}>
       {children}
     </AuthContext.Provider>
