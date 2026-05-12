@@ -22,7 +22,6 @@
         "studentEmail": { "type": "string", "format": "email" },
         "studentName": { "type": "string" },
         "certificateNumber": { "type": "string" },
-        "courseName": { "type": "string" },
         "issueDate": { "type": "string", "format": "date-time" },
         "imageUrl": { "type": "string", "format": "uri" },
         "tokenId": { "type": "string" },
