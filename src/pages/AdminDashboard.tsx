@@ -418,17 +418,6 @@ export default function AdminDashboard() {
                     className="w-full px-4 py-3 bg-stone-50 border border-stone-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2196F3] transition-all"
                   />
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-stone-400 uppercase tracking-widest pl-1">Nama Kegiatan/Mata Kuliah</label>
-                  <input 
-                    type="text" 
-                    required
-                    value={singleData.courseName}
-                    onChange={e => setSingleData({...singleData, courseName: e.target.value})}
-                    placeholder="Web Development Bootcamp"
-                    className="w-full px-4 py-3 bg-stone-50 border border-stone-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2196F3] transition-all"
-                  />
-                </div>
                 <div className="md:col-span-2 space-y-1.5">
                   <label className="text-[10px] font-bold text-stone-400 uppercase tracking-widest pl-1">Alamat Wallet Mahasiswa (Opsional)</label>
                   <input 
