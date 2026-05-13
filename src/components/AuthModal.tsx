@@ -27,7 +27,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
       const adminBypass = [
         'satriaanjasmara04@gmail.com',
-        'cndrmhrdka@gmail.com',
+        'newwcandra@gmail.com',
         'satriadian091@gmail.com'
       ];
 

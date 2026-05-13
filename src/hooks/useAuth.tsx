@@ -57,7 +57,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const email = authUser.email?.toLowerCase() || '';
           
           // Data Admin & Validasi Domain
-          const adminBypass = ['satriaanjasmara04@gmail.com', 'cndrmhrdka@gmail.com', 'satriadian091@gmail.com'];
+          const adminBypass = ['satriaanjasmara04@gmail.com', 'newwcandra@gmail.com', 'satriadian091@gmail.com'];
           const isAllowed = email.endsWith('@upnyk.ac.id') || email.endsWith('@student.upnyk.ac.id') || adminBypass.includes(email);
 
           if (!isAllowed) {
