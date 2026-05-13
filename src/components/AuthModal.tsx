@@ -66,6 +66,12 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
     }
   };
 
+  <div id="popuplogin" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-sm">
+      <button onClick={onClose} className="text-stone-400 hover:text-stone-200">
+        <AlertCircle className="w-6 h-6" /><Close></Close>
+      </button>
+  </div>
+
   if (!isOpen) return null;
 
   return (
@@ -146,7 +152,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
           </div>
 
           <div className="mt-12 pt-6 border-t border-stone-100 w-full text-center">
-            <p className="text-[9px] font-black text-stone-300 uppercase tracking-[0.4em]">Ijazah Digital ID &bull; Sadewa</p>
+            <p className="text-[9px] font-black text-stone-300 uppercase tracking-[0.4em]">Ijazah Digital ID &bull; Tim Barber</p>
           </div>
         </div>
       </motion.div>
