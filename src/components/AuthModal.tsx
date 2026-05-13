@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { AlertCircle, Loader2, Wallet } from 'lucide-react';
+import { AlertCircle, Loader2, X } from 'lucide-react'; // Ganti Close dengan X
 import { motion, AnimatePresence } from 'motion/react';
 import { auth } from '../lib/firebase';
 import { signOut } from 'firebase/auth';
@@ -19,39 +19,37 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const [activeTab, setActiveTab] = useState<'student' | 'admin'>('student');
 
   const handleGoogleLogin = async () => {
-  setLoading(true);
-  setError(null);
-  try {
-    const user = await loginWithGoogle();
-    const email = user?.email?.toLowerCase() || '';
+    setLoading(true);
+    setError(null);
+    try {
+      const user = await loginWithGoogle();
+      const email = user?.email?.toLowerCase() || '';
 
-    const adminBypass = [
-      'satriaanjasmara04@gmail.com',
-      'cndrmhrdka@gmail.com',
-      'satriadian091@gmail.com'
-    ];
+      const adminBypass = [
+        'satriaanjasmara04@gmail.com',
+        'cndrmhrdka@gmail.com',
+        'satriadian091@gmail.com'
+      ];
 
-    if (activeTab === 'student') {
-      if (!email.endsWith('@student.upnyk.ac.id')) {
-        await signOut(auth);
-        throw new Error("Gunakan email Mahasiswa (@student.upnyk.ac.id)");
+      if (activeTab === 'student') {
+        if (!email.endsWith('@student.upnyk.ac.id')) {
+          await signOut(auth);
+          throw new Error("Gunakan email Mahasiswa (@student.upnyk.ac.id)");
+        }
+      } else {
+        const isAllowedStaff = email.endsWith('@upnyk.ac.id') || adminBypass.includes(email);
+        if (!isAllowedStaff) {
+          await signOut(auth);
+          throw new Error("Akses Ditolak! Staff wajib menggunakan email resmi @upnyk.ac.id");
+        }
       }
-    } else {
-      // PERBAIKAN: Gunakan .includes agar semua email di daftar bisa masuk
-      const isAllowedStaff = email.endsWith('@upnyk.ac.id') || adminBypass.includes(email);
-      
-      if (!isAllowedStaff) {
-        await signOut(auth);
-        throw new Error("Akses Ditolak! Staff wajib menggunakan email resmi @upnyk.ac.id");
-      }
+      onClose();
+    } catch (err: any) {
+      setError(err.message || 'Login Google gagal.');
+    } finally {
+      setLoading(false);
     }
-    onClose();
-  } catch (err: any) {
-    setError(err.message || 'Login Google gagal.');
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const handleWalletLogin = async (connector: any) => {
     setLoading(true);
@@ -66,16 +64,18 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
     }
   };
 
-  <div id="popuplogin" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-sm">
-      <button onClick={onClose} className="text-stone-400 hover:text-stone-200">
-        <AlertCircle className="w-6 h-6" /><Close></Close>
-      </button>
-  </div>
-
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-sm">
+      {/* Tombol Close Global */}
+      <button 
+        onClick={onClose} 
+        className="absolute top-6 right-6 text-white/50 hover:text-white transition-colors"
+      >
+        <X className="w-8 h-8" />
+      </button>
+
       <motion.div 
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -111,7 +111,6 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
             )}
           </AnimatePresence>
 
-          {/* Opsi 1: Google SSO */}
           <button 
             onClick={handleGoogleLogin}
             disabled={loading}
@@ -131,7 +130,6 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
              <div className="h-[1px] bg-stone-100 flex-1" />
           </div>
 
-          {/* Opsi 2: Web3 Wallets */}
           <div className="grid grid-cols-2 gap-3 w-full">
             <button 
               onClick={() => handleWalletLogin(connectors.find(c => c.name.toLowerCase().includes('metamask')) || connectors[0])}

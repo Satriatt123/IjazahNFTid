@@ -39,13 +39,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { signMessageAsync } = useSignMessage();
 
   useEffect(() => {
-    // 1. Cek tanda sesi aktif di tab ini
     const isTabActive = sessionStorage.getItem('ijazah_session_active');
 
     const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
       try {
         if (authUser) {
-          // 2. Jika Firebase mendeteksi user TAPI tanda sesi tab hilang, paksa logout
+          // Jika sesi tab tidak ada, paksa logout demi keamanan
           if (!isTabActive) {
             await firebaseSignOut(auth);
             if (isConnected) await disconnectAsync();
@@ -56,13 +55,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
 
           const email = authUser.email?.toLowerCase() || '';
-          const isAllowedDomain = email.endsWith('@upnyk.ac.id') || email.endsWith('@student.upnyk.ac.id');
-          const adminBypass = [
-            'satriaanjasmara04@gmail.com', 
-            'cndrmhrdka@gmail.com', 
-            'satriadian091@gmail.com'
-          ];
-          const isAllowed = isAllowedDomain || adminBypass.includes(email);
+          
+          // Data Admin & Validasi Domain
+          const adminBypass = ['satriaanjasmara04@gmail.com', 'cndrmhrdka@gmail.com', 'satriadian091@gmail.com'];
+          const isAllowed = email.endsWith('@upnyk.ac.id') || email.endsWith('@student.upnyk.ac.id') || adminBypass.includes(email);
 
           if (!isAllowed) {
             await firebaseSignOut(auth);
@@ -81,7 +77,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (docSnap.exists()) {
             const data = docSnap.data() as UserProfile;
             if (shouldBeAdmin && data.role !== 'admin') {
-              await setDoc(docRef, { role: 'admin' }, { merge: true });
+              await updateDoc(docRef, { role: 'admin' });
               setProfile({ ...data, role: 'admin' });
             } else {
               setProfile(data);
@@ -116,14 +112,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const loginWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
-    
     try {
-      await setPersistence(auth, browserSessionPersistence); //
+      await setPersistence(auth, browserSessionPersistence);
       const result = await signInWithPopup(auth, provider);
-      
-      // 3. Set tanda sesi aktif agar diakui oleh useEffect
       sessionStorage.setItem('ijazah_session_active', 'true');
-      
       return result.user;
     } catch (error) {
       throw error;
@@ -140,20 +132,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const message = `LOGIN IJAZAH DIGITAL ID\n\nAlamat: ${address}\nTimestamp: ${new Date().toISOString()}`;
       await signMessageAsync({ message, account: address as `0x${string}` });
 
-      await setPersistence(auth, browserSessionPersistence); //
+      await setPersistence(auth, browserSessionPersistence);
 
       try {
-        const result = await signInWithEmailAndPassword(auth, walletEmail, walletPass);
-        // 4. Set tanda sesi aktif untuk login wallet
-        sessionStorage.setItem('ijazah_session_active', 'true');
+        await signInWithEmailAndPassword(auth, walletEmail, walletPass);
       } catch (err: any) {
         if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
           await createUserWithEmailAndPassword(auth, walletEmail, walletPass);
-          sessionStorage.setItem('ijazah_session_active', 'true');
         } else {
           throw err;
         }
       }
+      sessionStorage.setItem('ijazah_session_active', 'true');
     } catch (error: any) {
       console.error('Wallet Login Error:', error);
       throw error;
@@ -195,22 +185,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     sessionStorage.removeItem('ijazah_session_active');
-    await firebaseSignOut(auth); //
-    if (isConnected) {
-      await disconnectAsync();
-    }
+    await firebaseSignOut(auth);
+    if (isConnected) await disconnectAsync();
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      profile, 
-      loading, 
-      loginWithGoogle, 
-      loginWithWallet, 
-      logout, 
-      updateAccount 
-    }}>
+    <AuthContext.Provider value={{ user, profile, loading, loginWithGoogle, loginWithWallet, logout, updateAccount }}>
       {children}
     </AuthContext.Provider>
   );
