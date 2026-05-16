@@ -144,7 +144,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
               disabled={loading}
               className="py-3 bg-stone-50 border border-stone-200 rounded-xl hover:bg-white hover:border-black transition-all flex flex-col items-center gap-2"
             >
-              <img src="https://static.okx.com/cdn/assets/imgs/221/9E4E2C2D0C1A6E1E.png" alt="OKX" className="w-5 h-5" />
+              <img src="https://images.seeklogo.com/logo-png/45/1/okx-logo-png_seeklogo-459094.png" alt="OKX" className="w-5 h-5" />
               <span className="text-[9px] font-black tracking-tighter uppercase">OKX Wallet</span>
             </button>
           </div>
