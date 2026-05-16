@@ -63,7 +63,6 @@ export default function StudentDashboard() {
       });
 
       setCertificates(fetchedData);
-      setDebugInfo(`Ditemukan ${fetchedData.length} sertifikat. Email: ${emailLower} | Wallet: ${walletAddress || 'tidak ada'}`);
     } catch (err) {
       console.error(err);
       setDebugInfo('Error loading certificates');
