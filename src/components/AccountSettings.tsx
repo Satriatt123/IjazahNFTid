@@ -25,8 +25,6 @@ export default function AccountSettings() {
         throw new Error('Format alamat wallet tidak valid.');
       }
 
-      // PERBAIKAN: Tambahkan 'undefined' di parameter kedua (password) 
-      // agar 'name' dan 'wallet' masuk ke urutan yang benar sesuai useAuth.tsx
       await updateAccount(
         email !== profile?.email ? email : undefined, 
         undefined, // newPassword dikosongkan

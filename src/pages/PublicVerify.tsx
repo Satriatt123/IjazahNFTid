@@ -37,7 +37,6 @@ export default function PublicVerify({ onBack }: PublicVerifyProps) {
     setError(null);
 
     try {
-      // 1. Cek berdasarkan ID Dokumen Firestore
       if (cleanId.length >= 20) {
         const docRef = doc(db, 'certificates', cleanId);
         const docSnap = await getDoc(docRef);
@@ -47,7 +46,6 @@ export default function PublicVerify({ onBack }: PublicVerifyProps) {
         }
       }
 
-      // 2. Cek berdasarkan Token ID (Blockchain)
       const qToken = query(collection(db, 'certificates'), 
         where('tokenId', '==', cleanId), limit(1));
       const tokenSnap = await getDocs(qToken);
@@ -57,7 +55,6 @@ export default function PublicVerify({ onBack }: PublicVerifyProps) {
         return;
       }
 
-      // 3. Cek berdasarkan Nomor Ijazah
       const qNum = query(collection(db, 'certificates'), 
         where('certificateNumber', '==', cleanId), limit(1));
       const numSnap = await getDocs(qNum);
@@ -93,7 +90,6 @@ export default function PublicVerify({ onBack }: PublicVerifyProps) {
 
   return (
     <div className="max-w-5xl mx-auto p-4 sm:p-8 py-12 animate-in fade-in duration-700">
-      {/* Header Navigasi */}
       <div className="mb-12 flex justify-between items-center bg-white p-6 rounded-[2rem] border border-stone-200 shadow-sm">
         <button 
           onClick={onBack}
@@ -108,7 +104,6 @@ export default function PublicVerify({ onBack }: PublicVerifyProps) {
       </div>
 
       {!cert ? (
-        /* --- TAMPILAN PENCARIAN --- */
         <div className="max-w-xl mx-auto space-y-10 py-10">
           <div className="text-center space-y-4">
             <div className="w-20 h-20 bg-stone-100 rounded-3xl flex items-center justify-center mx-auto mb-6">
@@ -144,11 +139,9 @@ export default function PublicVerify({ onBack }: PublicVerifyProps) {
           </form>
         </div>
       ) : (
-        /* --- KARTU DETAIL IJAZAH --- */
         <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
           <div className="relative bg-white rounded-[2.5rem] border border-stone-200 shadow-2xl overflow-hidden">
              
-             {/* Header Status (Fixed: Null-check txHash) */}
              <div className={`${cert.txHash ? 'bg-green-600' : 'bg-amber-600'} text-white px-10 py-5 flex flex-col md:flex-row items-center justify-between gap-4`}>
                 <div className="flex items-center gap-3">
                    <CheckCircle2 className="w-4 h-4" />
@@ -162,7 +155,6 @@ export default function PublicVerify({ onBack }: PublicVerifyProps) {
              </div>
 
              <div className="flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-stone-100">
-                {/* Sisi Kiri: Info Teknis Blockchain */}
                 <div className="md:w-[40%] p-10 sm:p-14 bg-stone-50/40">
                    <div className="relative mb-10">
                       <img src={cert.imageUrl} className="w-full aspect-[3/4] object-cover rounded-3xl shadow-2xl border border-white" alt="Diploma Preview" />
@@ -196,7 +188,6 @@ export default function PublicVerify({ onBack }: PublicVerifyProps) {
                    </div>
                 </div>
 
-                {/* Sisi Kanan: Detail Data Ijazah */}
                 <div className="flex-1 p-10 sm:p-14 space-y-12 bg-white">
                    <div className="space-y-2">
                       <h2 className="text-5xl font-serif italic text-stone-900 leading-tight">Ijazah Universitas</h2>

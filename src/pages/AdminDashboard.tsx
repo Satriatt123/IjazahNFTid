@@ -58,12 +58,10 @@ export default function AdminDashboard() {
 
       const contract = getContract(wallet);
 
-      // 1. Upload Gambar ke IPFS
       addLog('Mengunggah ijazah ke IPFS...');
       const pinataResult = await uploadToIPFS(singleImage, singleImage.name);
       const imageUrl = `https://gateway.pinata.cloud/ipfs/${pinataResult.IpfsHash}`;
 
-      // 2. Buat Metadata Ijazah
       addLog('Menyusun metadata...');
       const metadata = {
         name: `Ijazah Universitas - ${singleData.studentName}`,
@@ -78,7 +76,6 @@ export default function AdminDashboard() {
       const metaResult = await uploadJSONToIPFS(metadata);
       const tokenURI = `ipfs://${metaResult.IpfsHash}`;
 
-      // 3. Minting (Blockchain)
       let txHash = '';
       let tokenId = '';
       const walletAddress = singleData.studentWalletAddress.trim();
@@ -102,7 +99,6 @@ export default function AdminDashboard() {
         addLog('Wallet tidak valid/kosong. Melewati Blockchain (Model Database-Only).');
       }
 
-      // 4. Catat di Firestore
       await addDoc(collection(db, 'certificates'), {
         ...singleData,
         issueDate: new Date().toISOString(),
@@ -190,7 +186,6 @@ export default function AdminDashboard() {
         throw new Error('VITE_CONTRACT_ADDRESS looks like a Private Key. Please use the 42-character Contract Address.');
       }
 
-      // Verifikasi kepemilikan kontrak
       addLog('Verifying contract ownership...');
       try {
         const contractOwner = await contract.owner();
@@ -210,7 +205,6 @@ export default function AdminDashboard() {
         try {
           addLog(`Processing ${item.studentName}...`);
 
-          // 1. Get image from ZIP
           const imageFile = zipContent.file(item.imageFileName.trim());
           if (!imageFile) {
             addLog(`Error: Image ${item.imageFileName} not found in ZIP. Skipping.`);
@@ -219,7 +213,6 @@ export default function AdminDashboard() {
 
           const imageBlob = await imageFile.async('blob');
 
-          // 2. Upload to Pinata (IPFS)
           addLog(`Uploading image to IPFS via Pinata...`);
           const pinataResult = await uploadToIPFS(imageBlob, item.imageFileName);
           const ipfsHash = pinataResult.IpfsHash;
@@ -227,7 +220,6 @@ export default function AdminDashboard() {
 
           addLog(`IPFS Link: ${imageUrl}`);
 
-          // 3. Create & Upload Metadata
           const metadata = {
             name: `University Certificate - ${item.studentName}`,
             description: `Digital Certificate issued by VeriCert for ${item.studentName}`,
@@ -243,7 +235,6 @@ export default function AdminDashboard() {
           const metaResult = await uploadJSONToIPFS(metadata);
           const tokenURI = `ipfs://${metaResult.IpfsHash}`;
 
-          // 4. Mint on Blockchain (ONLY if wallet is valid)
           const rawRecipient = (item.studentWalletAddress || '').trim();
           const isValidRecipient = rawRecipient && ethers.isAddress(rawRecipient);
 
@@ -266,7 +257,6 @@ export default function AdminDashboard() {
             addLog(`No valid wallet for ${item.studentName}. Skipping Blockchain minting.`);
           }
 
-          // 5. Save to Firestore (Always)
           await addDoc(collection(db, 'certificates'), {
             studentEmail: item.studentEmail.toLowerCase().trim(),
             studentName: item.studentName,
@@ -332,7 +322,6 @@ export default function AdminDashboard() {
                   </div>
 
                   <form onSubmit={handleSingleUpload} className="grid md:grid-cols-2 gap-4">
-                    {/* Field: Nama Lengkap */}
                     <div className="space-y-1.5">
                       <label className="label-style">Nama Lengkap</label>
                       <input 
@@ -345,7 +334,6 @@ export default function AdminDashboard() {
                       />
                     </div>
 
-                    {/* Field: Email */}
                     <div className="space-y-1.5">
                       <label className="label-style">Email Institusi</label>
                       <input 
@@ -358,7 +346,6 @@ export default function AdminDashboard() {
                       />
                     </div>
 
-                    {/* Field: Nomor Ijazah (span full width) */}
                     <div className="md:col-span-2 space-y-1.5">
                       <label className="label-style">Nomor Ijazah</label>
                       <input 
@@ -371,7 +358,6 @@ export default function AdminDashboard() {
                       />
                     </div>
 
-                    {/* Field: Wallet Address (span full width) */}
                     <div className="md:col-span-2 space-y-1.5">
                       <label className="label-style">Recipient Wallet Address</label>
                       <input 

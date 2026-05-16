@@ -8,11 +8,9 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-[#003366] text-white flex flex-col relative overflow-hidden font-sans">
-      {/* Top Bar Decoration */}
       <div className="absolute top-0 left-0 w-full h-[60px] bg-[#0c2a47] z-0" />
       
       <div className="flex-1 flex flex-col items-center justify-center relative z-10 px-4 mb-[60px]">
-        {/* Decorative Elements */}
         <div className="absolute top-1/4 left-10 opacity-20 pointer-events-none select-none">
           <div className="text-6xl font-light">+</div>
         </div>

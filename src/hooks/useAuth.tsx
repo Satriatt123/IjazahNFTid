@@ -44,7 +44,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
       try {
         if (authUser) {
-          // Jika sesi tab tidak ada, paksa logout demi keamanan
           if (!isTabActive) {
             await firebaseSignOut(auth);
             if (isConnected) await disconnectAsync();
@@ -56,7 +55,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
           const email = authUser.email?.toLowerCase() || '';
           
-          // Data Admin & Validasi Domain
           const adminBypass = ['satriaanjasmara04@gmail.com', 'newwcandra@gmail.com', 'satriadian091@gmail.com'];
           const isAllowed = email.endsWith('@upnyk.ac.id') || email.endsWith('@student.upnyk.ac.id') || adminBypass.includes(email);
 

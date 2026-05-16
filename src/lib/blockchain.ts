@@ -31,14 +31,7 @@ export async function mintingProses(studentAddress: string, tokenId: number, tok
   }
 }
 
-// Admin wallet for minting (Requires PRIVATE_KEY which is sensitive)
-// NOTE: For security, a real backend should handle the private key.
-// In this applet environment, we access it via import.meta.env if prefixed with VITE_, 
-// but the user put PRIVATE_KEY (no prefix) in .env.example.
-// This means it's only available server-side if using Express, or we need to prefix it.
-// However, the user provided it, so I will try to use it.
 export function getAdminWallet(provider: ethers.Provider) {
-  // Check both VITE_PRIVATE_KEY (standard for Vite) and PRIVATE_KEY (as fallback)
   const pk = (import.meta as any).env.VITE_PRIVATE_KEY || (import.meta as any).env.PRIVATE_KEY;
 
   if (!pk) {
@@ -47,7 +40,6 @@ export function getAdminWallet(provider: ethers.Provider) {
   }
   
   try {
-    // Ensure the private key starts with 0x if it's a hex string
     const formattedPk = pk.startsWith('0x') ? pk : `0x${pk}`;
     return new ethers.Wallet(formattedPk, provider);
   } catch (error) {

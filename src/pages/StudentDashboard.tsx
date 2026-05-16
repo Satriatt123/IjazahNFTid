@@ -30,7 +30,6 @@ export default function StudentDashboard() {
     }
 
     setLoading(true);
-    setDebugInfo('Memuat data...');
 
     try {
       const emailLower = user.email.toLowerCase().trim();
