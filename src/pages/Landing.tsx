@@ -39,7 +39,7 @@ export default function Landing() {
           <div className="flex flex-col items-center gap-6 mt-4">
             <button 
               onClick={() => setShowLogin(true)}
-              className="group px-10 py-4 bg-white text-[#003366] rounded-full font-bold text-lg md:text-xl hover:bg-yellow-400 hover:text-[#003366] transition-all transform hover:scale-105 shadow-xl flex items-center gap-3 animate-bounce hover:animate-none"
+              className="group px-10 py-4 bg-white text-[#003366] rounded-full font-bold text-lg md:text-xl hover:bg-yellow-400 hover:text-[#003366] transition-all transform hover:scale-105 shadow-xl flex items-center gap-3 hover:animate-none"
             >
               LOGIN KE DASHBOARD <LogIn className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
             </button>
