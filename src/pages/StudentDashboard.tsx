@@ -46,7 +46,6 @@ export default function StudentDashboard() {
       let fetchedData = emailSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Certificate));
       console.log(`Found by email: ${fetchedData.length}`);
 
-      // 2. Tentukan wallet address (dari profile atau dari email sintetis)
       let walletAddress: string | null = null;
       if (user.email.startsWith('wallet_')) {
         const extracted = user.email.split('_')[1]?.split('@')[0];
@@ -70,7 +69,6 @@ export default function StudentDashboard() {
         });
       }
 
-      // Sorting manual berdasarkan mintedAt (descending)
       fetchedData.sort((a, b) => {
         const getTime = (cert: Certificate) => {
           if (cert.mintedAt?.seconds) return cert.mintedAt.seconds;
@@ -83,7 +81,6 @@ export default function StudentDashboard() {
 
       console.log(`Total certificates: ${fetchedData.length}`);
       setCertificates(fetchedData);
-      setDebugInfo(`Ditemukan ${fetchedData.length} sertifikat. Email: ${emailLower} | Wallet: ${walletAddress || 'tidak ada'}`);
     } catch (err: any) {
       console.error('Error fetching certificates:', err);
       setDebugInfo(`Error: ${err.message}`);
@@ -212,7 +209,6 @@ export default function StudentDashboard() {
         )}
       </AnimatePresence>
 
-      {/* Modal detail - sama seperti sebelumnya, tidak diubah agar jawaban tidak terlalu panjang */}
       <AnimatePresence>
         {selectedCert && (
           <>
@@ -222,7 +218,6 @@ export default function StudentDashboard() {
                 <img src={selectedCert.imageUrl} className="w-full h-full object-cover" />
               </div>
               <div className="flex-1 p-8 md:p-12 overflow-y-auto">
-                {/* ... isi modal (bisa copy dari kode sebelumnya) ... */}
                 <div className="text-center">
                   <button onClick={() => setSelectedCert(null)} className="text-stone-400 text-sm">Tutup</button>
                 </div>
