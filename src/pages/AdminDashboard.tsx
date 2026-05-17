@@ -57,12 +57,10 @@ export default function AdminDashboard() {
 
       const contract = getContract(wallet);
 
-      // 1. Upload to IPFS
       addLog('Uploading image to IPFS...');
       const pinataResult = await uploadToIPFS(singleImage, singleImage.name);
       const imageUrl = `https://gateway.pinata.cloud/ipfs/${pinataResult.IpfsHash}`;
       
-      // 2. Metadata
       addLog('Uploading metadata...');
       const metadata = {
         name: `Ijazah Universitas - ${singleData.studentName}`,
@@ -78,7 +76,6 @@ export default function AdminDashboard() {
       const metaResult = await uploadJSONToIPFS(metadata);
       const tokenURI = `ipfs://${metaResult.IpfsHash}`;
 
-      // 3. Mint (Optional)
       let txHash = '';
       let tokenId = '';
       const walletAddress = singleData.studentWalletAddress.trim();
@@ -102,7 +99,6 @@ export default function AdminDashboard() {
         addLog('No valid Wallet detected. Skipping Blockchain minting (Database-only mode).');
       }
 
-      // 4. Simpan ke Firestore — setDoc dengan ID terkontrol agar lolos isValidId
       const certId = `cert-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
       await setDoc(doc(db, 'certificates', certId), {
         studentEmail: singleData.studentEmail.toLowerCase().trim(),
@@ -139,7 +135,6 @@ export default function AdminDashboard() {
       skipEmptyLines: true,
       transformHeader: (header) => header.trim(), // Normalize headers
       complete: (results) => {
-        // Map data to ensure field names match our interface regardless of CSV case
         const normalizedData = results.data.map((row: any) => ({
           studentEmail: row.studentEmail || row.email || '',
           studentName: row.studentName || row.name || '',
@@ -190,13 +185,11 @@ export default function AdminDashboard() {
       addLog(`Connecting to Contract: ${(import.meta as any).env.VITE_CONTRACT_ADDRESS}`);
       addLog(`Using Admin Wallet: ${wallet.address}`);
       
-      // Check if addresses are valid lengths to prevent PK in Address field
       const contractAddr = (import.meta as any).env.VITE_CONTRACT_ADDRESS;
       if (contractAddr.length > 42) {
         throw new Error('VITE_CONTRACT_ADDRESS looks like a Private Key. Please use the 42-character Contract Address.');
       }
 
-      // Verification: Check if sender is owner
       addLog('Verifying contract ownership...');
       try {
         const contractOwner = await contract.owner();
@@ -216,7 +209,6 @@ export default function AdminDashboard() {
         try {
           addLog(`Processing ${item.studentName}...`);
         
-        // 1. Get image from ZIP
         const imageFile = zipContent.file(item.imageFileName.trim());
         if (!imageFile) {
           addLog(`Error: Image ${item.imageFileName} not found in ZIP. Skipping.`);
@@ -225,7 +217,6 @@ export default function AdminDashboard() {
 
         const imageBlob = await imageFile.async('blob');
         
-        // 2. Upload to Pinata (IPFS)
         addLog(`Uploading image to IPFS via Pinata...`);
         const pinataResult = await uploadToIPFS(imageBlob, item.imageFileName);
         const ipfsHash = pinataResult.IpfsHash;
@@ -233,7 +224,6 @@ export default function AdminDashboard() {
         
         addLog(`IPFS Link: ${imageUrl}`);
 
-        // 3. Create & Upload Metadata
         const metadata = {
           name: `Ijazah Universitas - ${item.studentName}`,
           description: `Dokumen Ijazah Digital Resmi yang diamankan dengan Protokol Blockchain`,
@@ -250,7 +240,6 @@ export default function AdminDashboard() {
         const metaResult = await uploadJSONToIPFS(metadata);
         const tokenURI = `ipfs://${metaResult.IpfsHash}`;
 
-        // 4. Mint on Blockchain (ONLY if wallet is valid)
         const rawRecipient = (item.studentWalletAddress || '').trim();
         const isValidRecipient = rawRecipient && ethers.isAddress(rawRecipient);
         
@@ -273,7 +262,6 @@ export default function AdminDashboard() {
           addLog(`No valid wallet for ${item.studentName}. Skipping Blockchain minting.`);
         }
 
-        // 5. Simpan ke Firestore — setDoc dengan ID terkontrol agar lolos isValidId
         const certId = `cert-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
         await setDoc(doc(db, 'certificates', certId), {
           studentEmail: item.studentEmail.toLowerCase().trim(),
@@ -295,7 +283,6 @@ export default function AdminDashboard() {
           addLog(`Successfully minted certificate for ${item.studentName}.`);
         } catch (mintErr: any) {
           addLog(`Minting Failed for ${item.studentName}: ${mintErr.message}`);
-          // Continue to next record or stop depending on policy
         }
       }
 
@@ -371,7 +358,6 @@ export default function AdminDashboard() {
       )}
 
       <div className="grid lg:grid-cols-3 gap-8">
-        {/* Main Interface Column */}
         <div className="lg:col-span-2 space-y-6">
           {activeMode === 'single' ? (
             <div className="p-8 bg-white rounded-3xl border border-stone-200 shadow-sm">
