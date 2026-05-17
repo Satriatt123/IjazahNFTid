@@ -44,10 +44,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (authUser) {
           const email = authUser.email?.toLowerCase() || '';
           
-          // Daftar email admin bypass
           const adminBypass = ['satriadian091@gmail.com', 'newwcandra@gmail.com', 'satriaanjasmara04@gmail.com'];
           
-          // 🔥 PERBAIKAN 1: Izinkan semua domain yang valid
           const isAllowed = email.endsWith('@upnyk.ac.id') || email.endsWith('@student.upnyk.ac.id') || adminBypass.includes(email);
           
           if (!isAllowed) {
@@ -63,7 +61,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const docRef = doc(db, 'users', authUser.uid);
           const docSnap = await getDoc(docRef);
 
-          // 🔥 PERBAIKAN 2: Tentukan role dengan benar
           const shouldBeAdmin = adminBypass.includes(email) || email.endsWith('@upnyk.ac.id');
 
           if (docSnap.exists()) {
