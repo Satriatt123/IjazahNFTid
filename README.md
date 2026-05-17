@@ -1,1 +1,1 @@
-# IjazahNFTid
+# Ijazah Digital ID
