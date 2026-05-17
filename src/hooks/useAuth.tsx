@@ -39,12 +39,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { signMessageAsync } = useSignMessage();
 
   useEffect(() => {
-    const isTabActive = sessionStorage.getItem('ijazah_session_active');
-
     const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
       try {
         if (authUser) {
-          if (!isTabActive) {
+          const email = authUser.email?.toLowerCase() || '';
+          
+          // Daftar email admin bypass
+          const adminBypass = ['satriadian091@gmail.com', 'newwcandra@gmail.com', 'satriaanjasmara04@gmail.com'];
+          
+          // 🔥 PERBAIKAN 1: Izinkan semua domain yang valid
+          const isAllowed = email.endsWith('@upnyk.ac.id') || email.endsWith('@student.upnyk.ac.id') || adminBypass.includes(email);
+          
+          if (!isAllowed) {
             await firebaseSignOut(auth);
             if (isConnected) await disconnectAsync();
             setUser(null);
@@ -53,24 +59,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             return;
           }
 
-          const email = authUser.email?.toLowerCase() || '';
-          
-          const adminBypass = ['satriadian091@gmail.com', 'newwcandra@gmail.com', 'satriaanjasmara04@gmail.com'];
-          const shouldbeAdmin = adminBypass.includes(email) || email.endsWith('@upnyk.ac.id');
-          
-          if (!shouldbeAdmin) {
-            await firebaseSignOut(auth);
-            setUser(null);
-            setProfile(null);
-            return;
-          }
-
           setUser(authUser);
           const docRef = doc(db, 'users', authUser.uid);
           const docSnap = await getDoc(docRef);
 
-          const adminList = [...adminBypass];
-          const shouldBeAdmin = adminList.includes(email) || email.includes('admin');
+          // 🔥 PERBAIKAN 2: Tentukan role dengan benar
+          const shouldBeAdmin = adminBypass.includes(email) || email.endsWith('@upnyk.ac.id');
 
           if (docSnap.exists()) {
             const data = docSnap.data() as UserProfile;
@@ -88,7 +82,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               name: authUser.displayName || email.split('@')[0],
               role: shouldBeAdmin ? 'admin' : 'student',
               createdAt: serverTimestamp(),
-              walletAddress: null
+              walletAddress: walletAddress
             };
             await setDoc(docRef, newProfileData);
             setProfile(newProfileData as unknown as UserProfile);
@@ -113,7 +107,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await setPersistence(auth, browserSessionPersistence);
       const result = await signInWithPopup(auth, provider);
-      sessionStorage.setItem('ijazah_session_active', 'true');
       return result.user;
     } catch (error) {
       throw error;
@@ -141,7 +134,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           throw err;
         }
       }
-      sessionStorage.setItem('ijazah_session_active', 'true');
     } catch (error: any) {
       console.error('Wallet Login Error:', error);
       throw error;
@@ -182,7 +174,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async () => {
-    sessionStorage.removeItem('ijazah_session_active');
     await firebaseSignOut(auth);
     if (isConnected) await disconnectAsync();
   };
