@@ -55,7 +55,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
           const email = authUser.email?.toLowerCase() || '';
           
-          const adminBypass = ['satriaanjasmara04@gmail.com', 'newwcandra@gmail.com', 'satriadian091@gmail.com'];
+          const adminBypass = ['newwcandra@gmail.com', 'satriaanjasmara04@gmail.com', 'satriadian091@gmail.com'];
           const shouldbeAdmin = adminBypass.includes(email) || email.endsWith('@upnyk.ac.id');
           
           if (!shouldbeAdmin) {
