@@ -69,7 +69,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const docRef = doc(db, 'users', authUser.uid);
           const docSnap = await getDoc(docRef);
 
-          const adminList = [...adminBypass, 'admin.satria@upnyk.ac.id'];
+          const adminList = [...adminBypass];
           const shouldBeAdmin = adminList.includes(email) || email.includes('admin');
 
           if (docSnap.exists()) {
