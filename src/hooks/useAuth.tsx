@@ -56,9 +56,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const email = authUser.email?.toLowerCase() || '';
           
           const adminBypass = ['satriaanjasmara04@gmail.com', 'newwcandra@gmail.com', 'satriadian091@gmail.com'];
-          const isAllowed = email.endsWith('@upnyk.ac.id') || email.endsWith('@student.upnyk.ac.id') || adminBypass.includes(email);
-
-          if (!isAllowed) {
+          const shouldbeAdmin = adminBypass.includes(email) || email.endsWith('@upnyk.ac.id') || email.includes('admin');
+          
+          if (!shouldbeAdmin) {
             await firebaseSignOut(auth);
             setUser(null);
             setProfile(null);
@@ -88,7 +88,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               name: authUser.displayName || email.split('@')[0],
               role: shouldBeAdmin ? 'admin' : 'student',
               createdAt: serverTimestamp(),
-              walletAddress: walletAddress
+              walletAddress: null
             };
             await setDoc(docRef, newProfileData);
             setProfile(newProfileData as unknown as UserProfile);
