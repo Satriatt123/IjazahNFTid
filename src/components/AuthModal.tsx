@@ -12,11 +12,24 @@ interface AuthModalProps {
 }
 
 export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
-  const { loginWithGoogle, loginWithWallet } = useAuth();
+  const { loginWithGoogle, loginWithWallet, loginAsDemo } = useAuth();
   const { connectors } = useConnect();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'student' | 'admin'>('student');
+
+  const handleDemoLogin = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      await loginAsDemo(activeTab);
+      onClose();
+    } catch (err: any) {
+      setError(err.message || 'Login Demo gagal.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleGoogleLogin = async () => {
     setLoading(true);
@@ -111,18 +124,32 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
             )}
           </AnimatePresence>
 
-          <button 
-            onClick={handleGoogleLogin}
-            disabled={loading}
-            className="w-full flex items-center justify-center gap-4 py-5 bg-white border-2 border-stone-100 rounded-2xl hover:border-blue-400 hover:bg-blue-50/30 transition-all group disabled:opacity-50"
-          >
-            {loading ? <Loader2 className="w-6 h-6 animate-spin text-blue-500" /> : (
-              <>
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-6 h-6" />
-                <span className="font-bold text-stone-700 group-hover:text-blue-600">Masuk dengan Google</span>
-              </>
-            )}
-          </button>
+          <div className="flex flex-col gap-3 w-full">
+            <button 
+              onClick={handleGoogleLogin}
+              disabled={loading}
+              className="w-full flex items-center justify-center gap-4 py-4 bg-white border-2 border-stone-100 rounded-2xl hover:border-blue-400 hover:bg-blue-50/30 transition-all group disabled:opacity-50"
+            >
+              {loading ? <Loader2 className="w-6 h-6 animate-spin text-blue-500" /> : (
+                <>
+                  <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-6 h-6" />
+                  <span className="font-bold text-stone-700 group-hover:text-blue-600">Masuk dengan Google</span>
+                </>
+              )}
+            </button>
+
+            <button 
+              onClick={handleDemoLogin}
+              disabled={loading}
+              className="w-full flex items-center justify-center gap-4 py-4 bg-stone-900 border-2 border-stone-900 rounded-2xl hover:bg-stone-800 transition-all group disabled:opacity-50"
+            >
+              {loading ? <Loader2 className="w-6 h-6 animate-spin text-white" /> : (
+                <span className="font-bold text-white group-hover:text-stone-200">
+                  Masuk sebagai Demo (Juri)
+                </span>
+              )}
+            </button>
+          </div>
 
           <div className="flex items-center w-full my-8 gap-4">
              <div className="h-[1px] bg-stone-100 flex-1" />

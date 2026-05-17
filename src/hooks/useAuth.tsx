@@ -22,6 +22,7 @@ interface AuthContextType {
   loading: boolean;
   loginWithGoogle: () => Promise<User>;
   loginWithWallet: (connector: any) => Promise<void>;
+  loginAsDemo: (role: 'student' | 'admin') => Promise<void>;
   logout: () => Promise<void>;
   updateAccount: (newEmail?: string, newPassword?: string, newName?: string, newWallet?: string) => Promise<void>;
 }
@@ -137,6 +138,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const loginAsDemo = async (role: 'student' | 'admin') => {
+    const email = role === 'admin' ? 'juri_admin@upnyk.ac.id' : 'juri_student@student.upnyk.ac.id';
+    const password = 'demo_password_123';
+    await setPersistence(auth, browserSessionPersistence);
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (err: any) {
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
+        await createUserWithEmailAndPassword(auth, email, password);
+      } else {
+        throw err;
+      }
+    }
+  };
+
   const updateAccount = async (newEmail?: string, newPassword?: string, newName?: string, newWallet?: string) => {
     if (!auth.currentUser) throw new Error('Anda harus login terlebih dahulu.');
     
@@ -176,7 +192,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, loginWithGoogle, loginWithWallet, logout, updateAccount }}>
+    <AuthContext.Provider value={{ user, profile, loading, loginWithGoogle, loginWithWallet, loginAsDemo, logout, updateAccount }}>
       {children}
     </AuthContext.Provider>
   );
